@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.6)
+project(CameraLaserSensor)
+
+set(CMAKE_CXX_STANDARD 11)
+find_package(OpenCV)
+find_package(PCL)
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(${PCL_INCLUDE_DIRS})
+set(SOURCE_FILES main.cpp CameraLaserSensor.cpp CameraLaserSensor.h)
+add_executable(CameraLaserSensor ${SOURCE_FILES})
+target_link_libraries(CameraLaserSensor ${OpenCV_LIBS})
+target_link_libraries(CameraLaserSensor ${PCL_LIBS})
