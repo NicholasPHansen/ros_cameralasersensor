@@ -20,7 +20,7 @@ public:
     CameraLaserSensor(int num_of_rois, int pixel_height, int pixel_width);
 
 
-    void calculate_distances(cv::Mat &image);
+    int calculate_distances(cv::Mat &image);
 };
 
 
