@@ -14,7 +14,7 @@ cv::Mat bwImg;      // binary image
 cv::Mat cdst;       // final image
 cv::Mat cannyImg;    // Canny edge image
 cv::Mat greenImg;    // Image containing greens
-cv::Mat HSVImg;    // HSV color image
+cv::Mat hsvImg;    // HSV color image
 cv::Mat errodeImg;
 int roi_height;
 int height, width;
@@ -29,7 +29,7 @@ cv::Point top_center, bottom_center;
 
 void init_images(int width, int height) {
     img = cv::Mat(height, width, IPL_DEPTH_8U, 3);
-    HSVImg = cv::Mat(height, width, IPL_DEPTH_8U, 3);
+    hsvImg = cv::Mat(height, width, IPL_DEPTH_8U, 3);
     greenImg = cv::Mat(height, width, IPL_DEPTH_8U, 3);
     invImg = cv::Mat(height, width, IPL_DEPTH_8U, 1);
     blurImg = cv::Mat(height, width, IPL_DEPTH_8U, 1);
@@ -58,6 +58,8 @@ int find_center(std::vector<cv::Vec4i> lines) {
 
 int CameraLaserSensor::calculate_distances(cv::Mat &image) {
 
+    std::clock_t start_time = std::clock();
+    /*
     // Go through each region of interest for each line
     for (int i = 0; i < this->num_of_rois / 2; i++) {
         this->distances_top[i] = 0;
@@ -67,20 +69,48 @@ int CameraLaserSensor::calculate_distances(cv::Mat &image) {
     int32_t top_dists[num_of_rois];
     int32_t bottom_dists[num_of_rois];
     int32_t x_center[num_of_rois];
-
+    */
     // Check that image is loaded
     if (image.empty()) { return -1; }
-    img = image;
+    //img = image;
 
     // Convert image to HSV
-    cv::cvtColor(img, HSVImg, CV_BGR2HSV);
+    //cv::cvtColor(img, HSVImg, CV_BGR2HSV);
+    //cv::cvtColor(image, hsvImg, CV_BGR2HSV);
+
+    //cv::GaussianBlur(image, HSVImg, cv::Size(3, 3), 2 , 2);
 
     // Find greens in image
-    cv::inRange(HSVImg, cv::Scalar(80 / 2, 0, 100), cv::Scalar(140 / 2, 255, 255), greenImg);
+    //cv::inRange(hsvImg, cv::Scalar(80 / 2, 0, 100), cv::Scalar(140 / 2, 255, 255), greenImg);
+    cv::inRange(image, cv::Scalar(0, 128, 0), cv::Scalar(128, 255, 128), greenImg);
 
     // Create Binary image with a threshold value of 128
     cv::threshold(greenImg, bwImg, 1, 255.0, cv::THRESH_BINARY);
 
+    // Erode green lines
+    //cv::Mat Kernel(cv::Size(2, 2), CV_8UC1);
+    //cv::erode(bwImg, errodeImg, Kernel);
+    cv::Mat Kernel = cv::getStructuringElement(cv::MORPH_CROSS, cv::Size(5, 5));;
+    cv::dilate(bwImg, errodeImg, Kernel);
+
+    double total_time = (std::clock() - start_time) / (double) CLOCKS_PER_SEC;
+
+    std::cout << "Calculations took: " << total_time << " seconds" << std::endl;
+    std::cout << "Frequency: " << 1.0 / total_time << std::endl;
+
+    cv::Mat downSampeld;
+    cv::pyrDown(errodeImg, downSampeld, cv::Size(image.cols / 2, image.rows / 2));
+    while (true) {
+        cv::imshow("Final Image", downSampeld);
+        //cv::imshow("Original Image", image);
+        //cv::imshow("Green Image", greenImg);
+        //cv::imshow("Green lines Image", bwImg);
+        //cv::imshow("Erroded Image", errodeImg);
+        char c = cvWaitKey(33); // press escape to quit
+        if (c == 27) break;
+    }
+
+    /*
     // Invert image
     cv::bitwise_not(bwImg, invImg);
 
@@ -99,16 +129,6 @@ int CameraLaserSensor::calculate_distances(cv::Mat &image) {
 
     cv::cvtColor(cannyImg, cdst, CV_GRAY2BGR);
 
-    /*
-    while (true) {
-        cv::imshow("input image", image);
-        cv::imshow("HSV Image", HSVImg);
-        cv::imshow("Green Image", greenImg);
-        cv::imshow("Erroded Green Image", errodeImg);
-        char c = cvWaitKey(33); // press escape to quit
-        if (c == 27) break;
-    }
-     */
 
     cv::Mat bwclone = img.clone();
     cv::cvtColor(img, bwclone, CV_BGR2GRAY);
@@ -190,6 +210,7 @@ int CameraLaserSensor::calculate_distances(cv::Mat &image) {
         if (c == 27) break;
     }
     return 0;
+     */
 
 
 }
