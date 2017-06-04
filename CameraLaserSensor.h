@@ -21,6 +21,8 @@ public:
 
 
     int calculate_distances(cv::Mat &image);
+
+    void show_images();
 };
 
 
