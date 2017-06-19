@@ -11,18 +11,19 @@
 class CameraLaserSensor {
 
     int pixel_height, pixel_width; // image size
-    int num_of_rois; // Number of regions of interest
+    int num_of_rois = 2; // Number of regions of interest
     int num_of_laser_lines = 2; // Assume two lasers
 
     std::vector<float> distances_top, distances_bottom;
+    std::vector<cv::Rect> rois_top, rois_bottom;
+
+    void CalculateROIs();
+    void InitializeROIs();
 
 public:
     CameraLaserSensor(int num_of_rois, int pixel_height, int pixel_width);
-
-
-    int calculate_distances(cv::Mat &image);
-
-    void show_images();
+    int CalculateDistances(cv::Mat &image);
+    void ShowImages();
 };
 
 

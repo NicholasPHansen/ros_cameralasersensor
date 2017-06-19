@@ -27,7 +27,7 @@ std::vector<cv::Vec4i> bottom_lines;
 cv::Point top_center, bottom_center;
 
 
-void init_images(int width, int height) {
+void InitImages(int width, int height) {
     img = cv::Mat(height, width, IPL_DEPTH_8U, 3);
     hsvImg = cv::Mat(height, width, IPL_DEPTH_8U, 3);
     greenImg = cv::Mat(height, width, IPL_DEPTH_8U, 3);
@@ -44,7 +44,8 @@ CameraLaserSensor::CameraLaserSensor(int num_of_rois, int pixel_height, int pixe
     this->distances_top.reserve(num_of_rois / 2);
     this->distances_bottom.reserve(num_of_rois / 2);
 
-    init_images(this->pixel_width, this->pixel_height);
+    InitImages(this->pixel_width, this->pixel_height);
+    InitializeROIs();
 }
 
 // Finds center of line
@@ -56,7 +57,7 @@ int find_center(std::vector<cv::Vec4i> lines) {
     } else return -1;
 };
 
-int CameraLaserSensor::calculate_distances(cv::Mat &image) {
+int CameraLaserSensor::CalculateDistances(cv::Mat &image) {
 
     /*
     // Go through each region of interest for each line
@@ -78,25 +79,34 @@ int CameraLaserSensor::calculate_distances(cv::Mat &image) {
     cv::Mat Kernel = cv::getStructuringElement(cv::MORPH_CROSS, cv::Size(5, 5));;
     cv::dilate(bwImg, errodeImg, Kernel);
 
-    cv::HoughLinesP(bwImg, top_lines, 1, CV_PI / 180, 1, 20, 15);
+
+    top_roi = bwImg(rois_top[0]);
+    bottom_roi = bwImg(rois_bottom[1]);
+    //cv::HoughLinesP(top_roi, top_lines, 1, CV_PI / 180, 1, 20, 15);
+    cv::HoughLinesP(bottom_roi, bottom_lines, 1, CV_PI / 180, 1, 20, 15);
 
     return 0;
-
 }
 
-
-void CameraLaserSensor::show_images() {
+void CameraLaserSensor::ShowImages() {
 
     cv::Mat downSampeld;
     cv::pyrDown(img, downSampeld, cv::Size(this->pixel_width / 2, this->pixel_height / 2));
     cv::pyrDown(errodeImg, errodeImg, cv::Size(this->pixel_width / 2, this->pixel_height / 2));
 
     while (true) {
-        for (size_t i = 0; i < top_lines.size(); i++) {
-            cv::Vec4i l = top_lines[i];
-            cv::line(downSampeld, cv::Point(l[0] / 2, l[1] / 2), cv::Point(l[2] / 2, l[3] / 2), cv::Scalar(0, 0, 255),
+        for (auto &line : top_lines) {
+            cv::line(downSampeld, cv::Point(line[0], line[1] / 2), cv::Point(line[2] / 2, line[3] / 2),
+                     cv::Scalar(0, 0, 255),
                      3, CV_AA);
         }
+        for (auto &line : bottom_lines) {
+            cv::line(downSampeld, cv::Point(line[0] / 2 + pixel_width/4, line[1] / 2 + pixel_height / 4),
+                     cv::Point(line[2] / 2 + pixel_width/4, line[3] / 2 + pixel_height / 4),
+                     cv::Scalar(0, 0, 255),
+                     3, CV_AA);
+        }
+
 
         cv::imshow("Final Image", errodeImg);
         cv::imshow("Original Image", downSampeld);
@@ -106,6 +116,25 @@ void CameraLaserSensor::show_images() {
         char c = cvWaitKey(33); // press escape to quit
         if (c == 27) break;
     }
+}
+
+void CameraLaserSensor::InitializeROIs() {
+
+    for (int i = 0; i < num_of_rois; i++) {
+        rois_top.push_back(cv::Rect(i * pixel_width / 2, 0, pixel_width / 2, pixel_height / 2));
+        rois_bottom.push_back(cv::Rect(i * pixel_width / 2, pixel_height / 2, pixel_width / 2, pixel_height / 2));
+    }
+}
+
+void CameraLaserSensor::CalculateROIs() {
+
+
+//    roi_height = height / 2;
+//    roi_width = width / num_of_rois;
+//    x_roi = j * roi_width;
+//    region_of_interest = cv::Rect(x_roi, 0, roi_width, roi_height);
+//    top_roi = errodeImg(region_of_interest);
+//    cv::rectangle(errodeImg, region_of_interest, cv::Scalar(0, 0, 255), 1, 8, 0);
 }
 
 
