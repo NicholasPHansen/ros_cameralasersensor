@@ -72,7 +72,7 @@ int CameraLaserSensor::CalculateDistances(cv::Mat &image) {
 
     cv::Mat top_roi = bwImg(rois_top[0]);
     cv::Mat bottom_roi = bwImg(rois_bottom[1]);
-    //cv::HoughLinesP(top_roi, top_lines, 1, CV_PI / 180, 1, 20, 15);
+    cv::HoughLinesP(top_roi, lines_top, 1, CV_PI / 180, 1, 20, 15);
     cv::HoughLinesP(bottom_roi, lines_bottom, 1, CV_PI / 180, 1, 20, 15);
 
     return 0;
