@@ -3,7 +3,7 @@
 //
 
 #include "CameraLaserSensor.h"
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
 
@@ -16,16 +16,6 @@ cv::Mat cannyImg;    // Canny edge image
 cv::Mat greenImg;    // Image containing greens
 cv::Mat hsvImg;    // HSV color image
 cv::Mat errodeImg;
-int roi_height;
-int height, width;
-float x_roi, y_roi, roi_width;
-cv::Rect region_of_interest;
-cv::Mat top_roi;
-cv::Mat bottom_roi;
-std::vector<cv::Vec4i> top_lines;
-std::vector<cv::Vec4i> bottom_lines;
-cv::Point top_center, bottom_center;
-
 
 void InitImages(int width, int height) {
     img = cv::Mat(height, width, IPL_DEPTH_8U, 3);
@@ -80,10 +70,10 @@ int CameraLaserSensor::CalculateDistances(cv::Mat &image) {
     cv::dilate(bwImg, errodeImg, Kernel);
 
 
-    top_roi = bwImg(rois_top[0]);
-    bottom_roi = bwImg(rois_bottom[1]);
+    cv::Mat top_roi = bwImg(rois_top[0]);
+    cv::Mat bottom_roi = bwImg(rois_bottom[1]);
     //cv::HoughLinesP(top_roi, top_lines, 1, CV_PI / 180, 1, 20, 15);
-    cv::HoughLinesP(bottom_roi, bottom_lines, 1, CV_PI / 180, 1, 20, 15);
+    cv::HoughLinesP(bottom_roi, lines_bottom, 1, CV_PI / 180, 1, 20, 15);
 
     return 0;
 }
@@ -95,14 +85,14 @@ void CameraLaserSensor::ShowImages() {
     cv::pyrDown(errodeImg, errodeImg, cv::Size(this->pixel_width / 2, this->pixel_height / 2));
 
     while (true) {
-        for (auto &line : top_lines) {
+        for (auto &line : lines_top) {
             cv::line(downSampeld, cv::Point(line[0], line[1] / 2), cv::Point(line[2] / 2, line[3] / 2),
                      cv::Scalar(0, 0, 255),
                      3, CV_AA);
         }
-        for (auto &line : bottom_lines) {
-            cv::line(downSampeld, cv::Point(line[0] / 2 + pixel_width/4, line[1] / 2 + pixel_height / 4),
-                     cv::Point(line[2] / 2 + pixel_width/4, line[3] / 2 + pixel_height / 4),
+        for (auto &line : lines_bottom) {
+            cv::line(downSampeld, cv::Point(line[0] / 2 + pixel_width / 4, line[1] / 2 + pixel_height / 4),
+                     cv::Point(line[2] / 2 + pixel_width / 4, line[3] / 2 + pixel_height / 4),
                      cv::Scalar(0, 0, 255),
                      3, CV_AA);
         }
@@ -121,9 +111,19 @@ void CameraLaserSensor::ShowImages() {
 void CameraLaserSensor::InitializeROIs() {
 
     for (int i = 0; i < num_of_rois; i++) {
-        rois_top.push_back(cv::Rect(i * pixel_width / 2, 0, pixel_width / 2, pixel_height / 2));
+
+        cv::Point top_center = cv::Point(i * pixel_width / 2, 0);
+        cv::Point bottom_center = cv::Point(i * pixel_width / 2, 0);
+
+        rois_top.push_back(cv::Rect(top_center.x, top_center.y, 0, pixel_height / 2));
         rois_bottom.push_back(cv::Rect(i * pixel_width / 2, pixel_height / 2, pixel_width / 2, pixel_height / 2));
     }
+}
+
+void CameraLaserSensor::SetROIParameters(int newNumOfROIs, int newROIWidth = 20, int newROIHeight = 20) {
+    this->num_of_rois = newNumOfROIs;
+    this->pixel_width = newROIWidth;
+    this->pixel_height = newROIHeight;
 }
 
 void CameraLaserSensor::CalculateROIs() {
